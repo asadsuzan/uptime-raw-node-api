@@ -6,7 +6,7 @@ author:suzan */
 
 const http = require("http");
 const { handleReqRes } = require("./helpers/handleReqRes");
-const { create, read } = require("./lib/data");
+const lib = require("./lib/data");
 
 // app object -- scaffolding
 const app = {};
@@ -16,16 +16,34 @@ app.config = {
   port: 8080,
 };
 
-// create("test", "new", { name: "suzan", country: "bangladesh" }, (e) => {
-//   console.log(e);
-// });
-// read("test", "new", (err, data) => {
+// lib.create(
+//   "users",
+//   "01614010594",
+//   { name: "suzan", password: "asad1234" },
+//   (e) => {
+//     console.log(e);
+//   }
+// );
+
+// lib.read("users", "01614010594", (err, data) => {
 //   if (!err) {
 //     console.log(JSON.parse(data));
 //   } else {
 //     console.log(err);
 //   }
 // });
+
+lib.update(
+  "users",
+  "01614010594",
+  { name: "suzan", passord: "1234567" },
+  (err) => {
+    console.log(err);
+  }
+);
+lib.delete("users", "o1614010596", (e) => {
+  console.log(e);
+});
 
 // handle request and response
 app.handleReqRes = handleReqRes;
