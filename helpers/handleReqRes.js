@@ -26,7 +26,7 @@ handler.handleReqRes = function (req, res) {
   const selectedRoute = routes[trimPath] ? routes[trimPath] : notFoundHandler;
 
   selectedRoute(reqObj, (statusCode, payload) => {
-    res.writeHead(statusCode);
+    res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify(payload));
   });
 };
