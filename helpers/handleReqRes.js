@@ -34,7 +34,7 @@ handler.handleReqRes = function (req, res) {
   req.on("end", () => {
     data += decoder.end();
     try {
-      data = JSON.parse(data);
+      reqObj.body = JSON.parse(data);
     } catch (error) {
       console.log(error.message);
     }
