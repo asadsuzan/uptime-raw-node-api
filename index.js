@@ -1,23 +1,26 @@
-/*title: raw nodejs api,
-des: raw nod js api with no dependence 
-author:suzan */
+/*
+TITLE:UPTIME MONITORING API - RAW NODEJS
+DESCRIPTION: MODULE FOR HANDLING REQUEST AND RESPONSE  
+AUTHOR:ASAD SUZAN
+*/
 
 // dependence
 
 const http = require("http");
 const { handleReqRes } = require("./helpers/handleReqRes");
 const lib = require("./lib/data");
+const { error } = require("console");
 
-// app object -- scaffolding
+// App object -- scaffolding
 const app = {};
 
-// config
+// configuration
 app.config = {
-  port: 8080,
+  port: 5000,
 };
 
-// create server using http
-app.createServer = function () {
+// create server
+app.createServer = () => {
   const server = http.createServer(app.handleReqRes);
 
   server.listen(app.config.port, () => {
@@ -26,5 +29,6 @@ app.createServer = function () {
 };
 // handle request and response
 app.handleReqRes = handleReqRes;
+
 // start the server
 app.createServer();

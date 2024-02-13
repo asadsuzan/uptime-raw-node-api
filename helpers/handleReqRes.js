@@ -1,46 +1,60 @@
-/*title: handleReqRes,
-des: handleReqRes
-author:suzan */
+/*
+TITLE: REQ-RES HANDLER
+DESCRIPTION: MODULE FOR HANDLING REQUEST AND RESPONSE  
+AUTHOR:ASAD SUZAN
+*/
 
 // dependance
 const url = require("url");
 const routes = require("../routes");
 const { notFoundHandler } = require("../handlers/routeHandler/notFound");
 const { StringDecoder } = require("string_decoder");
+// const { parseJson } = require("./utilites");
+const utilities = require("../helpers/utilites");
 
 // module scaffolding
 const handler = {};
 
 // handleReqRes
-
 handler.handleReqRes = function (req, res) {
   // get the url and parse it
   const parsedUrl = url.parse(req.url, true);
   const path = parsedUrl.pathname;
-  const trimPath = path.replace(/^\/|\/$/g, "");
+  const trimPath = path.replace(/^\/|\/$/g, ""); // REMOVE LEADING AND   trailing slashes
   const method = req.method.toLowerCase();
-  const queryObj = parsedUrl.query;
-  const headersObj = req.headers;
+  const query = parsedUrl.query;
+  const headers = req.headers;
+
+  // CONSTRUCT THE REQUEST OBJECT
+  const requestObj = { path: trimPath, method, query, headers };
   const decoder = new StringDecoder("utf-8");
   let data = "";
 
-  const reqObj = { trimPath, method, queryObj, headersObj };
+  // DETERMINE THE ROUTE OR USE THE notFoundHandler
+  const selectedRoute = routes[requestObj.path]
+    ? routes[requestObj.path]
+    : notFoundHandler;
 
-  const selectedRoute = routes[trimPath] ? routes[trimPath] : notFoundHandler;
+  // Event listener for incoming data
 
   req.on("data", (buffer) => {
     data += decoder.write(buffer);
   });
+
+  //EVENT LISTENER FOR END OF THE REQUEST
   req.on("end", () => {
     data += decoder.end();
-    try {
-      reqObj.body = JSON.parse(data);
-    } catch (error) {
-      console.log(error.message);
-    }
-    selectedRoute(reqObj, (statusCode, payload) => {
+
+    requestObj.body = utilities.parseJson(data);
+
+    // CALL THE selectedRoute and handle the response
+    selectedRoute(requestObj, (statuscode, payload) => {
+      statuscode = typeof statuscode === "number" ? statuscode : 500;
+      payload = typeof payload === "object" ? payload : { message: "success" };
+
+      payload = utilities.stringify(payload);
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify(payload));
+      res.end(payload);
     });
   });
 };

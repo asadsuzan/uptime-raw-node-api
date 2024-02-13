@@ -1,5 +1,6 @@
 // dependencies
 const lib = require("../../lib/data");
+const { hash } = require("../../helpers/utilites");
 
 // module scaffolding
 const handler = {};
@@ -49,23 +50,32 @@ handler._users.post = (reqObj, callback) => {
       ? reqObj.body.tosAgreement
       : false;
 
-  if (firstName && lastName && password && tosAgreement) {
-    const user = {
-      firstName,
-      lastName,
-      password,
-      tosAgreement,
-    };
-    let strData = JSON.stringify(user);
-    console.log(typeof strData);
-    lib.create("users", phone, strData, (err) => {
-      if (!err) {
-        callback(201, {
-          message: "user created successfully",
+  if (firstName && lastName && password && tosAgreement && phone) {
+    // check user if already exits
+    lib.read("users", phone, (errorRead) => {
+      if (errorRead) {
+        const user = {
+          firstName,
+          lastName,
+          password: hash(password),
+          tosAgreement,
+          phone,
+        };
+        let strData = JSON.stringify(user);
+        lib.create("users", phone, strData, (err) => {
+          if (!err) {
+            callback(201, {
+              message: "user created successfully",
+            });
+          } else {
+            callback(500, {
+              message: "something went wrong",
+            });
+          }
         });
       } else {
-        callback(500, {
-          message: "sever error",
+        callback(400, {
+          message: "user already exits",
         });
       }
     });
@@ -79,24 +89,26 @@ handler._users.post = (reqObj, callback) => {
 // get user data
 handler._users.get = (reqObj, callback) => {
   const phone =
-    typeof reqObj.queryObj.phone === "string" &&
-    reqObj.queryObj.phone.trim().length === 11
-      ? reqObj.queryObj.phone
+    typeof reqObj.query.phone === "string" &&
+    reqObj.query.phone.trim().length === 11
+      ? reqObj.query.phone
       : null;
 
   if (phone) {
     lib.read("users", phone, (err, data) => {
       if (!err && data) {
-        const parsedData = JSON.parse(data);
+        const user = JSON.parse(data);
+        delete user.password;
+
         callback(200, {
-          data: data,
+          data: user,
         });
       } else {
         callback(404, { message: "user not found" });
       }
     });
   } else {
-    callback(404, { message: "user not found" });
+    callback(404, { message: "invalid phone number" });
   }
 };
 
@@ -123,7 +135,7 @@ handler._users.put = (reqObj, callback) => {
   const password =
     typeof reqObj.body.password === "string" &&
     reqObj.body.password.trim().length > 0
-      ? reqObj.body.phone
+      ? reqObj.body.password
       : null;
 
   if (phone) {
@@ -138,36 +150,36 @@ handler._users.put = (reqObj, callback) => {
           user.lastName = lastName;
         }
         if (password) {
-          user.password = password;
+          user.password = hash(password);
         }
-        user = JSON.stringify(user);
+        const stringUser = JSON.stringify(user);
+
         // update data
-        lib.update("users", phone, user, (err) => {
+        lib.update("users", phone, stringUser, (err) => {
           if (err) {
-            console.log("updated");
-            callback(200);
+            callback(200, { message: "updated successfully" });
           } else {
-            console.log(err);
-            callback(500);
+            callback(500, { message: "something went wrong" });
           }
         });
       } else {
-        callback(404, { messaage: "user not found" });
+        callback(404, { message: "user not found" });
       }
     });
   } else {
-    callback(404, { message: "user not found, invalid phone number" });
+    callback(404, { message: "invalid phone number" });
   }
 };
 
 // delete user
 handler._users.delete = (reqObj, callback) => {
   const phone =
-    typeof reqObj.queryObj.phone === "string" &&
-    reqObj.queryObj.phone.trim().length === 11
-      ? reqObj.queryObj.phone
+    typeof reqObj.query.phone === "string" &&
+    reqObj.query.phone.trim().length === 11
+      ? reqObj.query.phone
       : null;
-
+  // console.log(reqObj.query.phone);
+  // console.log(phone);
   if (phone) {
     lib.read("users", phone, (err, data) => {
       if (!err && data) {
@@ -176,13 +188,15 @@ handler._users.delete = (reqObj, callback) => {
             callback(200, { message: "user deleted" });
           } else {
             console.log(err);
-            callback(500, { mesage: "server error" });
+            callback(500, { messaage: "server error" });
           }
         });
       } else {
         callback(404, { messaage: "user not found" });
       }
     });
+  } else {
+    callback(404, { messaage: "invalid phone number" });
   }
 };
 
