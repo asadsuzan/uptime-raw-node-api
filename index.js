@@ -9,7 +9,6 @@ AUTHOR:ASAD SUZAN
 const http = require("http");
 const { handleReqRes } = require("./helpers/handleReqRes");
 const lib = require("./lib/data");
-const { error } = require("console");
 
 // App object -- scaffolding
 const app = {};

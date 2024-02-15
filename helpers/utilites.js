@@ -47,4 +47,9 @@ utilities.hash = (str) => {
   }
   return false;
 };
+
+// generate random string
+utilities.randomString = (strLength) => {
+  return crypto.randomBytes(32).toString("hex");
+};
 module.exports = utilities;

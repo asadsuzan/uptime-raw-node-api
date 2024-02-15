@@ -1,14 +1,15 @@
 // dependencies
 const lib = require("../../lib/data");
 const { hash } = require("../../helpers/utilites");
+const utilities = require("../../helpers/utilites");
 
 // module scaffolding
 const handler = {};
 
-handler.userHandler = (reqObj, callback) => {
+handler.tokenHandler = (reqObj, callback) => {
   const acceptedMethods = ["post", "get", "put", "delete"];
   if (acceptedMethods.indexOf(reqObj.method) !== -1) {
-    const method = handler._users[reqObj.method];
+    const method = handler._tokens[reqObj.method];
     method(reqObj, callback);
   } else {
     callback(404, {
@@ -17,22 +18,10 @@ handler.userHandler = (reqObj, callback) => {
   }
 };
 
-handler._users = {};
+handler._tokens = {};
 
-// signup new user
-handler._users.post = (reqObj, callback) => {
-  const firstName =
-    typeof reqObj.body.firstName === "string" &&
-    reqObj.body.firstName.trim().length > 0
-      ? reqObj.body.firstName
-      : null;
-
-  const lastName =
-    typeof reqObj.body.lastName === "string" &&
-    reqObj.body.lastName.trim().length > 0
-      ? reqObj.body.lastName
-      : null;
-
+// create token
+handler._tokens.post = (reqObj, callback) => {
   const phone =
     typeof reqObj.body.phone === "string" &&
     reqObj.body.phone.trim().length === 11
@@ -45,49 +34,47 @@ handler._users.post = (reqObj, callback) => {
       ? reqObj.body.password
       : null;
 
-  const tosAgreement =
-    typeof reqObj.body.tosAgreement === "boolean"
-      ? reqObj.body.tosAgreement
-      : false;
-
-  if (firstName && lastName && password && tosAgreement && phone) {
-    // check user if already exits
-    lib.read("users", phone, (errorRead) => {
-      if (errorRead) {
-        const user = {
-          firstName,
-          lastName,
-          password: hash(password),
-          tosAgreement,
-          phone,
-        };
-        let strData = JSON.stringify(user);
-        lib.create("users", phone, strData, (err) => {
-          if (!err) {
-            callback(201, {
-              message: "user created successfully",
-            });
-          } else {
-            callback(500, {
-              message: "something went wrong",
-            });
-          }
-        });
+  if (phone && password) {
+    // check if registered user
+    lib.read("users", phone, (err, data) => {
+      if (!err && data) {
+        const user = utilities.parseJson(data);
+        const hashedPassword = hash(password);
+        if (user.password === hashedPassword) {
+          const tokenId = utilities.randomString(20);
+          const expiresAt = Date.now() + 60 * 60 * 1000;
+          const tokenData = {
+            phone,
+            expiresAt,
+            tokenId,
+          };
+          // save token
+          lib.create(
+            "tokens",
+            tokenId,
+            utilities.stringify(tokenData),
+            (err) => {
+              if (!err) {
+                callback(201, { message: "success", tokenData });
+              } else {
+                callback(500, { message: "there is something went wrong" });
+              }
+            }
+          );
+        } else {
+          callback(400, { message: "wrong password" });
+        }
       } else {
-        callback(400, {
-          message: "user already exits",
-        });
+        callback(400, { message: "data nai" });
       }
     });
   } else {
-    callback(400, {
-      message: "all the filed are required",
-    });
+    callback(400, { message: "invalid credentials" });
   }
 };
 
-// get user data
-handler._users.get = (reqObj, callback) => {
+// get token data
+handler._tokens.get = (reqObj, callback) => {
   const phone =
     typeof reqObj.query.phone === "string" &&
     reqObj.query.phone.trim().length === 11
@@ -112,8 +99,8 @@ handler._users.get = (reqObj, callback) => {
   }
 };
 
-//update user
-handler._users.put = (reqObj, callback) => {
+//update token
+handler._tokens.put = (reqObj, callback) => {
   const firstName =
     typeof reqObj.body.firstName === "string" &&
     reqObj.body.firstName.trim().length > 0
@@ -171,8 +158,8 @@ handler._users.put = (reqObj, callback) => {
   }
 };
 
-// delete user
-handler._users.delete = (reqObj, callback) => {
+// delete token
+handler._tokens.delete = (reqObj, callback) => {
   const phone =
     typeof reqObj.query.phone === "string" &&
     reqObj.query.phone.trim().length === 11
