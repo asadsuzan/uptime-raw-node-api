@@ -50,6 +50,21 @@ utilities.hash = (str) => {
 
 // generate random string
 utilities.randomString = (strLength) => {
-  return crypto.randomBytes(32).toString("hex");
+  const length =
+    typeof strLength === "number" && strLength > 0 ? strLength : false;
+  const characters = "abcdefghijklmnopqrstuvzxyz123456789";
+  const randNumber = Math.floor(Math.random() * length);
+
+  if (length) {
+    let output = "";
+    for (let i = 0; i < length; i++) {
+      let char = characters.charAt(Math.floor(Math.random() * length));
+      output += char;
+    }
+    console.log(output);
+    return output;
+  } else {
+    return null;
+  }
 };
 module.exports = utilities;

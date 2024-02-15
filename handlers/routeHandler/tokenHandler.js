@@ -57,6 +57,7 @@ handler._tokens.post = (reqObj, callback) => {
               if (!err) {
                 callback(201, { message: "success", tokenData });
               } else {
+                console.log(err);
                 callback(500, { message: "there is something went wrong" });
               }
             }
@@ -65,7 +66,7 @@ handler._tokens.post = (reqObj, callback) => {
           callback(400, { message: "wrong password" });
         }
       } else {
-        callback(400, { message: "data nai" });
+        callback(400, { message: "user not found" });
       }
     });
   } else {
@@ -75,27 +76,26 @@ handler._tokens.post = (reqObj, callback) => {
 
 // get token data
 handler._tokens.get = (reqObj, callback) => {
-  const phone =
-    typeof reqObj.query.phone === "string" &&
-    reqObj.query.phone.trim().length === 11
-      ? reqObj.query.phone
+  console.log(reqObj.query.id.length);
+  const id =
+    typeof reqObj.query.id === "string" && reqObj.query.id.trim().length === 20
+      ? reqObj.query.id
       : null;
-
-  if (phone) {
-    lib.read("users", phone, (err, data) => {
+  console.log(id);
+  if (id) {
+    // lookup token data
+    lib.read("tokens", id, (err, data) => {
       if (!err && data) {
-        const user = JSON.parse(data);
-        delete user.password;
-
+        const tokenData = utilities.parseJson(data);
         callback(200, {
-          data: user,
+          tokenData,
         });
       } else {
-        callback(404, { message: "user not found" });
+        callback(404, { message: "token not found" });
       }
     });
   } else {
-    callback(404, { message: "invalid phone number" });
+    callback(404, { message: "invalid token" });
   }
 };
 
