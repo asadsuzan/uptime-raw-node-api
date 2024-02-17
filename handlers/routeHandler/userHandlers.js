@@ -99,6 +99,7 @@ handler._users.get = (reqObj, callback) => {
       if (!err && data) {
         const user = JSON.parse(data);
         delete user.password;
+        delete user.tosAgreement;
 
         callback(200, {
           data: user,
@@ -156,8 +157,9 @@ handler._users.put = (reqObj, callback) => {
 
         // update data
         lib.update("users", phone, stringUser, (err) => {
-          if (err) {
+          if (!err) {
             callback(200, { message: "updated successfully" });
+            console.log(err);
           } else {
             callback(500, { message: "something went wrong" });
           }
@@ -178,8 +180,7 @@ handler._users.delete = (reqObj, callback) => {
     reqObj.query.phone.trim().length === 11
       ? reqObj.query.phone
       : null;
-  // console.log(reqObj.query.phone);
-  // console.log(phone);
+
   if (phone) {
     lib.read("users", phone, (err, data) => {
       if (!err && data) {
@@ -187,7 +188,6 @@ handler._users.delete = (reqObj, callback) => {
           if (!err) {
             callback(200, { message: "user deleted" });
           } else {
-            console.log(err);
             callback(500, { messaage: "server error" });
           }
         });

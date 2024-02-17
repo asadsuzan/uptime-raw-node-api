@@ -18,7 +18,6 @@ utilities.parseJson = (jsonString) => {
   try {
     output = JSON.parse(jsonString);
   } catch (error) {
-    console.log(error);
     output = {};
   }
 
@@ -53,12 +52,13 @@ utilities.randomString = (strLength) => {
   const length =
     typeof strLength === "number" && strLength > 0 ? strLength : false;
   const characters = "abcdefghijklmnopqrstuvzxyz123456789";
-  const randNumber = Math.floor(Math.random() * length);
 
   if (length) {
     let output = "";
-    for (let i = 0; i < length; i++) {
-      let char = characters.charAt(Math.floor(Math.random() * length));
+    for (let i = 1; i <= length; i++) {
+      let char = characters.charAt(
+        Math.floor(Math.random() * characters.length)
+      );
       output += char;
     }
     console.log(output);

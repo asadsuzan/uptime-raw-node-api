@@ -101,89 +101,68 @@ handler._tokens.get = (reqObj, callback) => {
 
 //update token
 handler._tokens.put = (reqObj, callback) => {
-  const firstName =
-    typeof reqObj.body.firstName === "string" &&
-    reqObj.body.firstName.trim().length > 0
-      ? reqObj.body.firstName
+  const tokenId =
+    typeof reqObj.body.tokenId === "string" &&
+    reqObj.body.tokenId.trim().length === 20
+      ? reqObj.body.tokenId
       : null;
 
-  const lastName =
-    typeof reqObj.body.lastName === "string" &&
-    reqObj.body.lastName.trim().length > 0
-      ? reqObj.body.lastName
-      : null;
+  const extend =
+    typeof reqObj.body.extend === "boolean" && reqObj.body.extend === true;
 
-  const phone =
-    typeof reqObj.body.phone === "string" &&
-    reqObj.body.phone.trim().length === 11
-      ? reqObj.body.phone
-      : null;
-
-  const password =
-    typeof reqObj.body.password === "string" &&
-    reqObj.body.password.trim().length > 0
-      ? reqObj.body.password
-      : null;
-
-  if (phone) {
-    lib.read("users", phone, (err, data) => {
+  if (tokenId && extend) {
+    lib.read("tokens", tokenId, (err, data) => {
       if (!err && data) {
-        let user = { ...JSON.parse(data) };
+        const tokenObj = utilities.parseJson(data);
+        if (tokenObj.expiresAt > Date.now()) {
+          tokenObj.expiresAt = Date.now() + 60 * 60 * 1000;
 
-        if (firstName) {
-          user.firstName = firstName;
-        }
-        if (lastName) {
-          user.lastName = lastName;
-        }
-        if (password) {
-          user.password = hash(password);
-        }
-        const stringUser = JSON.stringify(user);
+          // update data
+          const tokenString = utilities.stringify(tokenObj);
 
-        // update data
-        lib.update("users", phone, stringUser, (err) => {
-          if (err) {
-            callback(200, { message: "updated successfully" });
-          } else {
-            callback(500, { message: "something went wrong" });
-          }
-        });
+          lib.update("tokens", tokenId, tokenString, (errorUpdate) => {
+            if (!errorUpdate) {
+              callback(200, { message: "updated successfully" });
+            } else {
+              callback(500, { message: "something went wrong" });
+            }
+          });
+        } else {
+          callback(400, { message: "token expired" });
+        }
       } else {
-        callback(404, { message: "user not found" });
+        callback(404, { message: "invalid token id" });
       }
     });
   } else {
-    callback(404, { message: "invalid phone number" });
+    callback(404, { message: "there is problem in your request" });
   }
 };
 
 // delete token
 handler._tokens.delete = (reqObj, callback) => {
-  const phone =
-    typeof reqObj.query.phone === "string" &&
-    reqObj.query.phone.trim().length === 11
-      ? reqObj.query.phone
+  const tokenId =
+    typeof reqObj.query.tokenId === "string" &&
+    reqObj.query.tokenId.trim().length === 20
+      ? reqObj.query.tokenId
       : null;
-  // console.log(reqObj.query.phone);
-  // console.log(phone);
-  if (phone) {
-    lib.read("users", phone, (err, data) => {
+
+  if (tokenId) {
+    lib.read("tokens", tokenId, (err, data) => {
       if (!err && data) {
-        lib.delete("users", phone, (err) => {
+        lib.delete("tokens", tokenId, (err) => {
           if (!err) {
-            callback(200, { message: "user deleted" });
+            callback(200, { message: "deleted successfully" });
           } else {
-            console.log(err);
-            callback(500, { messaage: "server error" });
+            callback(500, { message: "server error" });
           }
         });
       } else {
-        callback(404, { messaage: "user not found" });
+        callback(404, { message: "token not found" });
       }
     });
   } else {
-    callback(404, { messaage: "invalid phone number" });
+    callback(404, { message: "invalid token id" });
   }
 };
 
