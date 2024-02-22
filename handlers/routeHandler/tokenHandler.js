@@ -76,7 +76,6 @@ handler._tokens.post = (reqObj, callback) => {
 
 // get token data
 handler._tokens.get = (reqObj, callback) => {
-  console.log(reqObj.query.id.length);
   const id =
     typeof reqObj.query.id === "string" && reqObj.query.id.trim().length === 20
       ? reqObj.query.id
@@ -164,6 +163,22 @@ handler._tokens.delete = (reqObj, callback) => {
   } else {
     callback(404, { message: "invalid token id" });
   }
+};
+
+// verify  token
+handler.verifyToken = (token, phone, callback) => {
+  lib.read("tokens", token, (err, data) => {
+    if (!err && data) {
+      const parsedData = utilities.parseJson(data);
+      if (parsedData.phone === phone && parsedData.expiresAt > Date.now()) {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    } else {
+      callback(false);
+    }
+  });
 };
 
 module.exports = handler;

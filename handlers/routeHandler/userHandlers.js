@@ -1,6 +1,7 @@
 // dependencies
 const lib = require("../../lib/data");
 const { hash } = require("../../helpers/utilites");
+const { verifyToken } = require("./tokenHandler");
 
 // module scaffolding
 const handler = {};
@@ -95,19 +96,35 @@ handler._users.get = (reqObj, callback) => {
       : null;
 
   if (phone) {
-    lib.read("users", phone, (err, data) => {
-      if (!err && data) {
-        const user = JSON.parse(data);
-        delete user.password;
-        delete user.tosAgreement;
+    const token =
+      typeof reqObj.headers.token === "string" &&
+      reqObj.headers.token.trim().length === 20
+        ? reqObj.headers.token
+        : null;
+    // verify token
+    if (token) {
+      verifyToken(token, phone, (tokenId) => {
+        if (tokenId) {
+          lib.read("users", phone, (err, data) => {
+            if (!err && data) {
+              const user = JSON.parse(data);
+              delete user.password;
+              delete user.tosAgreement;
 
-        callback(200, {
-          data: user,
-        });
-      } else {
-        callback(404, { message: "user not found" });
-      }
-    });
+              callback(200, {
+                data: user,
+              });
+            } else {
+              callback(404, { message: "user not found" });
+            }
+          });
+        } else {
+          callback(400, { message: "token not found" });
+        }
+      });
+    } else {
+      callback(404, { message: "invalid token number" });
+    }
   } else {
     callback(404, { message: "invalid phone number" });
   }
@@ -140,34 +157,49 @@ handler._users.put = (reqObj, callback) => {
       : null;
 
   if (phone) {
-    lib.read("users", phone, (err, data) => {
-      if (!err && data) {
-        let user = { ...JSON.parse(data) };
+    const token =
+      typeof reqObj.headers.token === "string" &&
+      reqObj.headers.token.trim().length === 20
+        ? reqObj.headers.token
+        : null;
+    // verify token
+    if (token) {
+      verifyToken(token, phone, (tokenId) => {
+        if (tokenId) {
+          lib.read("users", phone, (err, data) => {
+            if (!err && data) {
+              let user = { ...JSON.parse(data) };
+              if (firstName) {
+                user.firstName = firstName;
+              }
+              if (lastName) {
+                user.lastName = lastName;
+              }
+              if (password) {
+                user.password = hash(password);
+              }
+              const stringUser = JSON.stringify(user);
 
-        if (firstName) {
-          user.firstName = firstName;
+              // update data
+              lib.update("users", phone, stringUser, (err) => {
+                if (!err) {
+                  callback(200, { message: "updated successfully" });
+                  console.log(err);
+                } else {
+                  callback(500, { message: "something went wrong" });
+                }
+              });
+            } else {
+              callback(404, { message: "user not found" });
+            }
+          });
+        } else {
+          callback(400, { message: "token not found" });
         }
-        if (lastName) {
-          user.lastName = lastName;
-        }
-        if (password) {
-          user.password = hash(password);
-        }
-        const stringUser = JSON.stringify(user);
-
-        // update data
-        lib.update("users", phone, stringUser, (err) => {
-          if (!err) {
-            callback(200, { message: "updated successfully" });
-            console.log(err);
-          } else {
-            callback(500, { message: "something went wrong" });
-          }
-        });
-      } else {
-        callback(404, { message: "user not found" });
-      }
-    });
+      });
+    } else {
+      callback(404, { message: "invalid token number" });
+    }
   } else {
     callback(404, { message: "invalid phone number" });
   }
@@ -182,19 +214,35 @@ handler._users.delete = (reqObj, callback) => {
       : null;
 
   if (phone) {
-    lib.read("users", phone, (err, data) => {
-      if (!err && data) {
-        lib.delete("users", phone, (err) => {
-          if (!err) {
-            callback(200, { message: "user deleted" });
-          } else {
-            callback(500, { messaage: "server error" });
-          }
-        });
-      } else {
-        callback(404, { messaage: "user not found" });
-      }
-    });
+    const token =
+      typeof reqObj.headers.token === "string" &&
+      reqObj.headers.token.trim().length === 20
+        ? reqObj.headers.token
+        : null;
+    // verify token
+    if (token) {
+      verifyToken(token, phone, (tokenId) => {
+        if (tokenId) {
+          lib.read("users", phone, (err, data) => {
+            if (!err && data) {
+              lib.delete("users", phone, (err) => {
+                if (!err) {
+                  callback(200, { message: "user deleted" });
+                } else {
+                  callback(500, { messaage: "server error" });
+                }
+              });
+            } else {
+              callback(404, { messaage: "user not found" });
+            }
+          });
+        } else {
+          callback(400, { message: "token not found" });
+        }
+      });
+    } else {
+      callback(404, { message: "invalid token number" });
+    }
   } else {
     callback(404, { messaage: "invalid phone number" });
   }
